@@ -11,17 +11,28 @@ import java.util.Map;
 
 @LambdaHandler(lambdaName = "hello_world",
 	roleName = "hello_world-role",
-	isPublishVersion = true,
 	logsExpiration = RetentionSetting.SYNDICATE_ALIASES_SPECIFIED
 )
 @LambdaUrlConfig
 public class HelloWorld implements RequestHandler<Object, Map<String, Object>> {
 
 	public Map<String, Object> handleRequest(Object request, Context context) {
-		System.out.println("Hello from lambda context = " + context.toString());
+		Map<String,Object> mapRequst = (Map<String, Object>) request;
+
+		String path = (String) mapRequst.get("rawPath");
 		Map<String, Object> resultMap = new HashMap<String, Object>();
-		resultMap.put("statusCode", 200);
-		resultMap.put("message", "Hello from Lambda");
-		return resultMap;
+
+		if(path.equals("/hello")){
+			resultMap.put("statusCode", 200);
+			resultMap.put("message", "Hello from Lambda");
+		} else {
+			Map<String,Object> requestContext = (Map<String,Object>) mapRequst.get("requestContext");
+			Map<String,Object> http = (Map<String,Object>) requestContext.get("http");
+			String method = (String) http.get("method");
+			resultMap.put("statusCode", 400);
+			resultMap.put("message", "Bad request syntax or unsupported method. Request path: "+ path + ". HTTP method: " + method);
+		}
+
+	   return resultMap;
 	}
 }
